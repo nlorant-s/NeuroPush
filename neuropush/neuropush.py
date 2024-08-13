@@ -18,7 +18,7 @@ import os
 from functools import lru_cache
 
 # INITIALIZATION CONSTANTS
-population_size = 400
+population_size = 200
 max_generations = 20
 print_genomes = False
 
@@ -31,22 +31,72 @@ MAX_WEIGHT_VALUE = 1.0
 MAX_WEIGHTS = MAX_LAYER_SIZE**2 * MAX_HIDDEN_LAYERS + MAX_LAYER_SIZE
 TOTAL_GENES = MAX_HIDDEN_LAYERS + MAX_WEIGHTS
 show_network = False
-input_size = 4
+input_size = 6
 output_size = 1
 
 bold = '\033[1m'
 endbold = '\033[0m'
 
 # XOR dataset
-simple_X = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-simple_y = np.array([[0], [1], [1], [0]])
+X_2bit = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+y_2bit = np.array([[0], [1], [1], [0]])
 
-X = np.array([[0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 0, 1, 1],
+X_4bit = np.array([[0, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 0, 1, 1],
                 [0, 1, 0, 0], [0, 1, 0, 1], [0, 1, 1, 0], [0, 1, 1, 1],
                 [1, 0, 0, 0], [1, 0, 0, 1], [1, 0, 1, 0], [1, 0, 1, 1],
                 [1, 1, 0, 0], [1, 1, 0, 1], [1, 1, 1, 0], [1, 1, 1, 1]])
-y = np.array([[0], [1], [1], [0], [1], [0], [0], [1],
+y_4bit = np.array([[0], [1], [1], [0], [1], [0], [0], [1],
                 [1], [0], [0], [1], [0], [1], [1], [0]])
+
+X_5bit = np.array([
+    [0, 0, 0, 0, 0], [0, 0, 0, 0, 1], [0, 0, 0, 1, 0], [0, 0, 0, 1, 1],
+    [0, 0, 1, 0, 0], [0, 0, 1, 0, 1], [0, 0, 1, 1, 0], [0, 0, 1, 1, 1],
+    [0, 1, 0, 0, 0], [0, 1, 0, 0, 1], [0, 1, 0, 1, 0], [0, 1, 0, 1, 1],
+    [0, 1, 1, 0, 0], [0, 1, 1, 0, 1], [0, 1, 1, 1, 0], [0, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0], [1, 0, 0, 0, 1], [1, 0, 0, 1, 0], [1, 0, 0, 1, 1],
+    [1, 0, 1, 0, 0], [1, 0, 1, 0, 1], [1, 0, 1, 1, 0], [1, 0, 1, 1, 1],
+    [1, 1, 0, 0, 0], [1, 1, 0, 0, 1], [1, 1, 0, 1, 0], [1, 1, 0, 1, 1],
+    [1, 1, 1, 0, 0], [1, 1, 1, 0, 1], [1, 1, 1, 1, 0], [1, 1, 1, 1, 1]
+])
+y_5bit = np.array([
+    [0], [1], [1], [0], [1], [0], [0], [0],
+    [1], [0], [0], [0], [0], [0], [0], [1],
+    [1], [0], [0], [0], [0], [0], [0], [1],
+    [0], [0], [0], [1], [0], [1], [1], [0]
+])   
+
+# 6-bit XOR (Parity) inputs
+X = np.array([
+    [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 1, 1],
+    [0, 0, 0, 1, 0, 0], [0, 0, 0, 1, 0, 1], [0, 0, 0, 1, 1, 0], [0, 0, 0, 1, 1, 1],
+    [0, 0, 1, 0, 0, 0], [0, 0, 1, 0, 0, 1], [0, 0, 1, 0, 1, 0], [0, 0, 1, 0, 1, 1],
+    [0, 0, 1, 1, 0, 0], [0, 0, 1, 1, 0, 1], [0, 0, 1, 1, 1, 0], [0, 0, 1, 1, 1, 1],
+    [0, 1, 0, 0, 0, 0], [0, 1, 0, 0, 0, 1], [0, 1, 0, 0, 1, 0], [0, 1, 0, 0, 1, 1],
+    [0, 1, 0, 1, 0, 0], [0, 1, 0, 1, 0, 1], [0, 1, 0, 1, 1, 0], [0, 1, 0, 1, 1, 1],
+    [0, 1, 1, 0, 0, 0], [0, 1, 1, 0, 0, 1], [0, 1, 1, 0, 1, 0], [0, 1, 1, 0, 1, 1],
+    [0, 1, 1, 1, 0, 0], [0, 1, 1, 1, 0, 1], [0, 1, 1, 1, 1, 0], [0, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 1], [1, 0, 0, 0, 1, 0], [1, 0, 0, 0, 1, 1],
+    [1, 0, 0, 1, 0, 0], [1, 0, 0, 1, 0, 1], [1, 0, 0, 1, 1, 0], [1, 0, 0, 1, 1, 1],
+    [1, 0, 1, 0, 0, 0], [1, 0, 1, 0, 0, 1], [1, 0, 1, 0, 1, 0], [1, 0, 1, 0, 1, 1],
+    [1, 0, 1, 1, 0, 0], [1, 0, 1, 1, 0, 1], [1, 0, 1, 1, 1, 0], [1, 0, 1, 1, 1, 1],
+    [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 1], [1, 1, 0, 0, 1, 0], [1, 1, 0, 0, 1, 1],
+    [1, 1, 0, 1, 0, 0], [1, 1, 0, 1, 0, 1], [1, 1, 0, 1, 1, 0], [1, 1, 0, 1, 1, 1],
+    [1, 1, 1, 0, 0, 0], [1, 1, 1, 0, 0, 1], [1, 1, 1, 0, 1, 0], [1, 1, 1, 0, 1, 1],
+    [1, 1, 1, 1, 0, 0], [1, 1, 1, 1, 0, 1], [1, 1, 1, 1, 1, 0], [1, 1, 1, 1, 1, 1]
+])
+
+# 6-bit XOR (Parity) outputs
+y = np.array([
+    [0], [1], [1], [0], [1], [0], [0], [0],
+    [1], [0], [0], [0], [0], [0], [0], [1],
+    [1], [0], [0], [0], [0], [0], [0], [1],
+    [0], [0], [0], [1], [0], [1], [1], [0],
+    [0], [1], [1], [0], [1], [0], [0], [0],
+    [1], [0], [0], [0], [0], [0], [0], [1],
+    [1], [0], [0], [0], [0], [0], [0], [1],
+    [0], [0], [0], [1], [0], [1], [1], [0]
+])
+
 
 fitness_cache = {}
 
@@ -100,7 +150,10 @@ class CustomSearch(SearchAlgorithm):
     def step(self):
         """
         Evolve the population by selecting parents and producing children.
-        See
+        10% elite
+        20% random
+        70% lexicase
+        formerly 40% lexicase, 30% tournament
         """
         # Filter out individuals with invalid error vectors
         valid_individuals = Population([ind for ind in self.population if np.isfinite(ind.error_vector).all() and len(ind.error_vector) > 0])
@@ -108,21 +161,21 @@ class CustomSearch(SearchAlgorithm):
         # Elitism: Keep the best 10%
         best_individuals = sorted(valid_individuals, key=lambda ind: ind.total_error)[:int(len(valid_individuals) * 0.1)]
 
-        # Adjust selection sizes based on the number of valid individuals
+        # Selection strategy sizes
         total_size = len(self.population) - len(best_individuals)
-        random_size = int(total_size * 0.3)
+        random_size = int(total_size * 0.2)
         remaining_size = total_size - random_size
-        lexicase_size = remaining_size // 2  # Split remaining evenly between lexicase and tournament
-        tournament_size = remaining_size - lexicase_size
+        lexicase_size = remaining_size # // 2  # Split remaining evenly between lexicase and tournament
+        # tournament_size = remaining_size - lexicase_size
 
         # downsize tournament size if necessary
         self.tournament_selector.tournament_size = min(self.tournament_selector.tournament_size, len(valid_individuals))
 
         parents_lexicase = self.lexicase_selector.select(valid_individuals, n=lexicase_size)
-        parents_tournament = self.tournament_selector.select(valid_individuals, n=tournament_size)
+        # parents_tournament = self.tournament_selector.select(valid_individuals, n=tournament_size)
         randomly_generated = [custom_spawn_genome(np.random.randint(MIN_HIDDEN_LAYERS, MAX_HIDDEN_LAYERS + 1), MAX_WEIGHTS) for _ in range(random_size)]
         random_parents = [Individual(genome, self.config.signature) for genome in randomly_generated]
-        parents = parents_lexicase + parents_tournament
+        parents = parents_lexicase # + parents_tournament
 
         # print(f"  {len(parents)} parents selected, {len(set(id(parent) for parent in parents))} unique")
         children = best_individuals + random_parents
@@ -131,13 +184,13 @@ class CustomSearch(SearchAlgorithm):
         unique_elite_genomes = set(genome_to_hashable(ind.genome) for ind in best_individuals)
         unique_random_genomes = set(genome_to_hashable(ind.genome) for ind in random_parents)
         unique_lexicase_genomes = set(genome_to_hashable(ind.genome) for ind in parents_lexicase)
-        unique_tournament_genomes = set(genome_to_hashable(ind.genome) for ind in parents_tournament)
+        # unique_tournament_genomes = set(genome_to_hashable(ind.genome) for ind in parents_tournament)
 
-        print(f"{bold}Unique parents:{endbold}    {len(unique_parents)}/{len(parents)}")
-        print(f"  Elite            {len(unique_elite_genomes)}/{len(best_individuals)}")
-        print(f"  Random           {len(unique_random_genomes)}/{len(random_parents)}")
-        print(f"  Lexicase         {len(unique_lexicase_genomes)}/{len(parents_lexicase)}")
-        print(f"  Tournament       {len(unique_tournament_genomes)}/{len(parents_tournament)}")
+        # print(f"{bold}Unique parents:{endbold}    {len(unique_parents)}/{len(parents)}")
+        # print(f"  Elite            {len(unique_elite_genomes)}/{len(best_individuals)}")
+        # print(f"  Random           {len(unique_random_genomes)}/{len(random_parents)}")
+        # print(f"  Lexicase         {len(unique_lexicase_genomes)}/{len(parents_lexicase)}")
+        # print(f"  Tournament       {len(unique_tournament_genomes)}/{len(parents_tournament)}")
 
 
         if print_genomes:
